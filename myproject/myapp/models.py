@@ -1,22 +1,24 @@
-from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
+from django.utils.text import slugify
 
-class CustomUser(AbstractUser):
-    profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
-    date_of_birth = models.DateField(null=True, blank=True)
-    
-    # Definindo related_name para evitar conflitos com auth.User
-    groups = models.ManyToManyField(
-        Group,
-        related_name='customuser_set',
-        blank=True
+class Post(models.Model):
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('published', 'Published'),
     )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name='customuser_set',
-        blank=True
-    )
-    
+
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    author = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
 
     def __str__(self):
-        return self.username
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
